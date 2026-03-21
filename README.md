@@ -112,9 +112,13 @@ statsmodels
 If you use this framework in your research, please cite:
 
 ```bibtex
-@article{decoding_transformers_spectra,
-  title   = {Decoding Transformers Spectra: A Random Matrix Theory Framework
-             Beyond the Marchenko--Pastur Law},
-  year    = {2025}
+@article{Dantas2025,
+  title = {Decoding Transformers Spectra: A Random Matrix Theory Framework Beyond the Marchenko–Pastur Law},
+  url = {http://dx.doi.org/10.21203/rs.3.rs-7528284/v1},
+  DOI = {10.21203/rs.3.rs-7528284/v1},
+  publisher = {Springer Science and Business Media LLC},
+  author = {Dantas,  Pierre and Junior,  Waldir and Cordeiro,  Lucas and Santos,  Eulanda},
+  year = {2025},
+  month = nov 
 }
 ```
