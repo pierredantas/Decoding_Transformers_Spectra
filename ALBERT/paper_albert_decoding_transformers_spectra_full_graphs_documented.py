@@ -2377,15 +2377,15 @@ plt.rcParams.update({
     "font.family": "serif",
     "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "mathtext.fontset": "stix",
-    "font.size": 8,
-    "axes.titlesize": 9,
-    "axes.labelsize": 8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 7,
-    "axes.linewidth": 0.6,
-    "lines.linewidth": 1.2,
-    "grid.linewidth": 0.4,
+    "font.size": 5,
+    "axes.titlesize": 5,
+    "axes.labelsize": 5,
+    "xtick.labelsize": 5,
+    "ytick.labelsize": 5,
+    "legend.fontsize": 5,
+    "axes.linewidth": 0.5,
+    "lines.linewidth": 0.9,
+    "grid.linewidth": 0.3,
     "grid.alpha": 0.3,
     "pdf.fonttype": 42,
     "ps.fonttype": 42,
@@ -2443,34 +2443,29 @@ for (m, n) in shapes:
 # =========================
 # Plot grid
 # =========================
-fig, axs = plt.subplots(2, 2, figsize=(3.5, 4), sharey=True)
+fig, axs = plt.subplots(2, 2, figsize=(3.5, 1.8), sharey=True)
 axs = axs.flatten()
 
 for i, (ax, (shape_name, data)) in enumerate(zip(axs, results.items())):
     for c in c_TW_values:
-        ax.plot(alphas, data[c], marker="o", ms=2, linewidth=0.8,
+        ax.plot(alphas, data[c], marker="o", ms=1.5, linewidth=0.8,
                 color=C_TW_COLORS[c],
                 label=f"$c_{{\\alpha}}$={c}" if i == 0 else None)
-
-    # 45-degree reference line = perfect calibration (empirical = nominal)
+    # Nominal α diagonal reference line
     ax.plot(alphas, alphas, color="black", linestyle="--",
             linewidth=0.8, label="Nom. $\\alpha$" if i == 0 else None)
-
-    ax.set_title(shape_name, pad=2)
+    ax.set_title(shape_name, pad=1.5)
     ax.set_ylim(0, 0.2)
     ax.grid(True)
+    # Remove individual y labels
+    ax.set_ylabel("")
 
-    # Y label on all left column subplots
-    if i % 2 == 0:
-        ax.set_ylabel(r"$\alpha$ vs. Empirical rej. rate")
-        ax.yaxis.set_label_coords(-0.35, 0.5)
-    else:
-        ax.set_ylabel("")
+# Single centered y-label for the entire left column
+fig.text(0.02, 0.5, r"$\alpha$ vs. Empirical rej. rate",
+         va="center", ha="center", rotation="vertical",
+         fontsize=6)
 
-# Single legend on first axes only
-axs[0].legend(frameon=False)
-
-plt.subplots_adjust(hspace=0.5, wspace=0.4)
+plt.subplots_adjust(left=0.14, hspace=0.55, wspace=0.35)
 
 plt.savefig("graph_shrinkage_control_03_albert.pdf", format="pdf", bbox_inches="tight")
 plt.close()
