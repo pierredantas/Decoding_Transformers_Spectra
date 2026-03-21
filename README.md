@@ -117,7 +117,7 @@ If you use this framework in your research, please cite:
   url = {http://dx.doi.org/10.21203/rs.3.rs-7528284/v1},
   DOI = {10.21203/rs.3.rs-7528284/v1},
   publisher = {Springer Science and Business Media LLC},
-  author = {Dantas,  Pierre and Junior,  Waldir and Cordeiro,  Lucas and Santos,  Eulanda},
+  author = {Dantas, Pierre and Junior, Waldir and Cordeiro, Lucas and Santos, Eulanda},
   year = {2025},
   month = nov 
 }
