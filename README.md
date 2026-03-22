@@ -32,8 +32,10 @@ This repository implements a **Random Matrix Theory (RMT) framework** that syste
 | Model | Layers | Hidden Size | Parameters |
 |-------|--------|-------------|------------|
 | BERT-base-uncased | 12 | 768 | ~110M |
-| ALBERT-base-v2 | 1 (shared) | 768 | ~12M |
+| ALBERT-base-v2 | 1 (shared across 12) | 768 | ~12M |
 | BERT-Large-uncased | 24 | 1024 | ~340M |
+
+> **Note on ALBERT:** ALBERT uses cross-layer parameter sharing, meaning all 12 Transformer blocks share a single set of weight matrices stored in one layer group (`encoder.albert_layer_groups.0.albert_layers.0.*`). As a result, only one copy of each matrix type exists (Q, K, V, Att-Dense, FFN, FFN-Out), and layer-wise comparisons are not applicable. Graph axes that reference layers are replaced by matrix-type axes in the ALBERT scripts.
 
 ---
 
@@ -44,23 +46,33 @@ This repository implements a **Random Matrix Theory (RMT) framework** that syste
 ├── paper_bert_decoding_transformers_spectra_full_graphs.py
 ├── paper_albert_decoding_transformers_spectra_full_graphs.py
 ├── paper_bert_large_decoding_transformers_spectra_full_graphs.py
+├── PAPER_BERT_Decoding_Transformers_Spectra_full_graphs.ipynb
+├── PAPER_ALBERT_Decoding_Transformers_Spectra_full_graphs.ipynb
+├── PAPER_BERT_Large_Decoding_Transformers_Spectra_full_graphs.ipynb
+├── PAPER_BERT_Large_Decoding_Transformers_Spectra_full_graphs_.ipynb
 └── README.md
 ```
 
-Each script follows the same **two-section pipeline** followed by twelve graph sections:
+Each `.py` script follows the same **two-section pipeline** followed by twelve graph sections. The `.ipynb` notebooks are the cleaned Colab originals (widget metadata and widget-only outputs removed; all text, stream, and image outputs preserved).
+
+> **Structural note (BERT-base):** In `paper_bert_decoding_transformers_spectra_full_graphs.py`, Graphs 1–3 share a single set of helper functions and a single `SETTINGS` list defined once in the Graph 1 block. The ALBERT and BERT-Large scripts redefine helpers locally in each graph section for full self-containment.
 
 | Section | Description |
 |---------|-------------|
 | Section 1 | Extract raw weight matrices from HuggingFace and save as `.npy` with `manifest.json` |
-| Section 2 | Build column-standardized WMP matrices and save with round-trip verification |
-| Graphs 1–2 | ePDF / eCDF vs. conditional MP distribution under varying trim conditions |
-| Graphs 3–4 | ePDF across layers/matrix types (global scale); Residual CDF |
+| Section 2 | Build column-standardized W_MP matrices and save with round-trip verification |
+| Graph 1 | ePDF vs. conditional MP PDF — per-panel trim interval [L, U] |
+| Graph 2 | eCDF vs. conditional MP CDF — per-panel trim interval [L, U] |
+| Graph 3 | ePDF vs. conditional MP PDF — shared global x-axis across all panels |
+| Graph 4 | Residual CDF (eCDF − MP CDF) with KS statistic bands |
 | Graph 5 | QQ plots of empirical spectra vs. conditional MP quantiles |
-| Graph 6 | KS test decision heatmaps (layers × matrix types) |
-| Graph 7 | Per-layer acceptance rates with Wilson confidence intervals |
-| Graph 8 | Aspect ratio β vs. KS statistic scatter |
-| Graphs 9–10 | Bootstrap p-value distributions; KS–TW edge relaxation sensitivity |
-| Graphs 11–12 | Type-I calibration curves; eCDF bootstrap reference envelopes |
+| Graph 6 | KS test decision heatmaps (layers × matrix types, KS-strict and KS-TW) |
+| Graph 7 | Per-layer acceptance rates with Wilson 95 % confidence intervals |
+| Graph 8 | Aspect ratio β vs. KS statistic D_p scatter |
+| Graph 9 | Bootstrap p-value distributions across calibration scenarios |
+| Graph 10 | KS–TW edge relaxation sensitivity to c_α |
+| Graph 11 | Type-I calibration curves on synthetic MP-null matrices |
+| Graph 12 | eCDF bootstrap reference envelopes under distributional scenarios |
 
 ---
 
@@ -72,7 +84,7 @@ Each weight matrix $W$ of shape $(m, n)$ is column-standardized before spectral 
 
 $$W_{\text{MP}}[i,j] = \frac{W[i,j] - \mu_j}{\sigma_j}$$
 
-where $\mu_j$ and $\sigma_j$ are the column-wise mean and standard deviation. This ensures the i.i.d. zero-mean unit-variance assumption required by the MP law.
+where $\mu_j$ and $\sigma_j$ are the column-wise mean and standard deviation. This ensures the i.i.d. zero-mean unit-variance assumption required by the MP law. Zero-variance columns are left unchanged (divided by 1.0). The original matrices can be recovered exactly from $W_{\text{MP}}$, $\mu$, and $\sigma$; round-trip reconstruction errors are verified at the end of Section 2.
 
 ### Marchenko–Pastur Law
 
@@ -81,6 +93,17 @@ For a random matrix $W$ with i.i.d. $\mathcal{N}(0,1)$ entries and aspect ratio 
 $$f_\beta(\lambda) = \frac{\sqrt{(\lambda_+ - \lambda)(\lambda - \lambda_-)}}{2\pi\beta\lambda}, \quad \lambda \in [\lambda_-, \lambda_+]$$
 
 with support boundaries $\lambda_\pm = (1 \pm \sqrt{\beta})^2$.
+
+The CDF is computed numerically on a fine quadrature grid using the substitution $g(t) = \lambda_- + (\lambda_+ - \lambda_-)\,t^2$, which concentrates points near the lower edge where the PDF has an integrable singularity.
+
+### Aspect Ratio β
+
+All scripts use an explicit `beta_override` rather than the natural $\beta = \min(m,n)/\max(m,n)$ of each matrix. This pins the MP law to one of two regimes for cross-matrix comparability:
+
+| Regime | β | Matrix types |
+|--------|---|--------------|
+| Rectangular | 0.25 | FFN intermediate/output, attention Q/K/V (Sets 1–3) |
+| Square | 1.00 | Attention output dense, pooler (Sets 4–6) |
 
 ### Edge Trimming
 
@@ -91,6 +114,8 @@ Three strategies remove boundary eigenvalues before KS tests:
 | `tw` | $\delta = c_\alpha \cdot n_{\text{eff}}^{-2/3} \cdot (1+\sqrt{\beta})^{4/3}$ |
 | `fraction` | $\delta = f \cdot (\lambda_+ - \lambda_-)$ |
 | `tw_or_fraction` | $\delta = \max(\delta_{\text{TW}},\; \delta_{\text{frac}})$ |
+
+All figures use `tw_or_fraction` with $c_\alpha = 2.0$ and $f = 0.05$.
 
 ---
 
